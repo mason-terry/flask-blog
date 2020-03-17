@@ -1,2 +1,3 @@
-# flask-blog
-Flask blog to learn more about flask
+# Flask Blog
+
+Blog to learn more about Flask
