@@ -29,11 +29,31 @@ def register():
                 (username, generate_password_hash(password))
             )
             db.commit()
-            return redirect(url_for('auth.login'))
+            user = log_user_in(username)
+            store_user_info(user)
+            return redirect(url_for('index'))
 
         flash(error)
 
     return render_template('auth/register.html')
+
+
+def log_user_in(username):
+    db = get_db()
+    user = db.execute(
+        'SELECT * FROM user WHERE username = ?', (username,)
+    ).fetchone()
+
+    return user
+
+
+def check_password(user, password):
+    return check_password_hash(user['password'], password)
+
+
+def store_user_info(user):
+    session.clear()
+    session['user_id'] = user['id']
 
 
 @bp.route('/login', methods=('GET', 'POST'))
@@ -41,20 +61,16 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()
         error = None
-        user = db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)
-        ).fetchone()
+        user = log_user_in(username)
 
         if user is None:
             error = 'Incorrect username.'
-        elif not check_password_hash(user['password'], password):
+        elif not check_password(user, password):
             error = 'Incorrect password.'
 
         if error is None:
-            session.clear()
-            session['user_id'] = user['id']
+            store_user_info(user)
             return redirect(url_for('index'))
 
         flash(error)
